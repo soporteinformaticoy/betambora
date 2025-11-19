@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tambora - Eventos de Candombe en Uruguay y Argentina</title>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .admin-link {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .admin-link:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        #map {
+            height: 500px;
+            width: 100%;
+            z-index: 1;
+        }
+
+        .info-panel {
+            padding: 30px;
+            background: #f8f9fa;
+        }
+
+        .event-count {
+            text-align: center;
+            font-size: 1.2rem;
+            color: #2a5298;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2rem;
+            color: #666;
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 20px;
+            margin: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #c33;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        /* Custom Leaflet popup styling */
+        .leaflet-popup-content-wrapper {
+            border-radius: 10px;
+            box-shadow: 0 3px 14px rgba(0, 0, 0, 0.3);
+        }
+
+        .leaflet-popup-content {
+            margin: 15px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .popup-title {
+            margin: 0 0 10px 0;
+            color: #2a5298;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .popup-detail {
+            margin: 8px 0;
+            line-height: 1.5;
+        }
+
+        .popup-detail strong {
+            color: #1e3c72;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <a href="/admin" class="admin-link">🔐 Admin</a>
+            <h1>🥁 Tambora</h1>
+            <p class="subtitle">Eventos de Candombe en Uruguay y Argentina</p>
+        </header>
+
+        <div id="map"></div>
+
+        <div class="info-panel">
+            <div id="event-info" class="loading">Cargando eventos...</div>
+        </div>
+
+        <footer>
+            <p>Tambora - Descubrí los eventos de candombe en tu ciudad</p>
+        </footer>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <script>
+        let map;
+        let markers = [];
+
+        function initMap() {
+            // Crear el mapa centrado en el Río de la Plata (entre Uruguay y Argentina)
+            map = L.map('map').setView([-34.6037, -58.3816], 11);
+
+            // Agregar capa de OpenStreetMap
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                maxZoom: 19,
+            }).addTo(map);
+
+            // Cargar eventos
+            fetchEvents();
+        }
+
+        async function fetchEvents() {
+            try {
+                const response = await fetch('/api/events');
+                const events = await response.json();
+
+                if (events.length === 0) {
+                    document.getElementById('event-info').innerHTML =
+                        '<div class="event-count">No hay eventos disponibles. Ejecuta <code>npm run seed</code> para agregar datos de ejemplo.</div>';
+                    return;
+                }
+
+                document.getElementById('event-info').innerHTML =
+                    `<div class="event-count">📍 ${events.length} eventos de candombe encontrados</div>`;
+
+                // Crear array para ajustar el zoom a todos los marcadores
+                const bounds = [];
+
+                events.forEach(event => {
+                    // Verificar que el evento tenga ubicación
+                    if (!event.ubicacion || !event.ubicacion.coordinates) {
+                        console.warn('Evento sin ubicación:', event.titulo);
+                        return;
+                    }
+
+                    const lat = event.ubicacion.coordinates[1];
+                    const lng = event.ubicacion.coordinates[0];
+
+                    // Crear marcador
+                    const marker = L.marker([lat, lng], {
+                        title: event.titulo
+                    }).addTo(map);
+
+                    // Crear popup con información del evento
+                    const popupContent = `
+                        <div class="popup-content">
+                            <h3>${event.titulo}</h3>
+                            <div class="popup-detail">
+                                <strong>📅 Fecha:</strong> ${new Date(event.fecha).toLocaleDateString('es-UY', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    })}
+                            </div>
+                            ${event.descripcion ? `<div class="popup-detail"><strong>📝 Descripción:</strong> ${event.descripcion}</div>` : ''}
+                            <div class="popup-detail">
+                                <strong>📍 Lugar:</strong> ${event.direccion || event.ciudad}
+                            </div>
+                            ${event.agrupaciones && event.agrupaciones.length > 0 ?
+                            `<div class="popup-detail"><strong>🎭 Agrupaciones:</strong> ${event.agrupaciones.map(a => a.nombre).join(', ')}</div>`
+                            : ''}
+                        </div>
+                    `;
+
+                    marker.bindPopup(popupContent);
+                    markers.push(marker);
+                    bounds.push([lat, lng]);
+                });
+
+                // Ajustar el zoom para mostrar todos los marcadores
+                if (bounds.length > 0) {
+                    map.fitBounds(bounds, { padding: [50, 50] });
+                }
+
+            } catch (error) {
+                console.error('Error al cargar eventos:', error);
+                document.getElementById('event-info').innerHTML =
+                    '<div class="error">Error al cargar los eventos. Verifica que el servidor esté corriendo.</div>';
+            }
+        }
+
+        // Iniciar la aplicación cuando el DOM esté listo
+        document.addEventListener('DOMContentLoaded', initMap);
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eventos - Tambora Admin</title>
+    <link rel="stylesheet" href="/admin/css/admin.css">
+    <script src="/admin/js/auth.js" defer></script>
+    <script src="/admin/js/api.js" defer></script>
+</head>
+
+<body>
+    <div class="dashboard">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>🥁 Tambora</h2>
+                <p id="user-info">Cargando...</p>
+            </div>
+            <nav>
+                <ul class="nav-menu">
+                    <li class="nav-item"><a href="/admin/dashboard.html" class="nav-link">📊 Dashboard</a></li>
+                    <li class="nav-item"><a href="/admin/agrupaciones.html" class="nav-link">🎭 Agrupaciones</a></li>
+                    <li class="nav-item"><a href="/admin/integrantes.html" class="nav-link">👥 Integrantes</a></li>
+                    <li class="nav-item"><a href="/admin/eventos.html" class="nav-link active">📅 Eventos</a></li>
+                    <li class="nav-item"><a href="/" class="nav-link">🗺️ Mapa Público</a></li>
+                    <li class="nav-item"><a href="#" class="nav-link" id="logoutBtn">🚪 Cerrar Sesión</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <div class="content-header">
+                <h1>Eventos</h1>
+                <a href="/" class="btn btn-primary">Ver Mapa Público</a>
+            </div>
+
+            <div class="card">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Título</th>
+                                <th>Fecha</th>
+                                <th>Ciudad</th>
+                                <th>Agrupaciones</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            <tr>
+                                <td colspan="5" style="text-align: center;">
+                                    <div class="spinner"></div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>ℹ️ Gestión de Eventos</h3>
+                </div>
+                <p>Los eventos se muestran en el mapa público cuando su estado es "Publicado".</p>
+                <p style="margin-top: 10px;">Para crear o editar eventos, utiliza el script seedAdmin.js que incluye
+                    eventos de ejemplo.</p>
+                <p style="margin-top: 10px;"><strong>Próxima versión:</strong> Interfaz completa para crear y editar
+                    eventos con selector de mapa interactivo.</p>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            Auth.checkAuth();
+            document.getElementById('user-info').textContent = Auth.getUser().username;
+            document.getElementById('logoutBtn').addEventListener('click', (e) => { e.preventDefault(); Auth.logout(); });
+
+            async function loadEventos() {
+                try {
+                    const eventos = await API.getEventos();
+                    const tbody = document.getElementById('tableBody');
+
+                    if (eventos.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No hay eventos registrados</td></tr>';
+                        return;
+                    }
+
+                    tbody.innerHTML = eventos.map(e => {
+                        const agrupaciones = e.agrupaciones?.map(a => a.nombre).join(', ') || 'Sin agrupaciones';
+                        const estadoBadge = e.estado === 'Publicado' ? 'badge-success' :
+                            e.estado === 'Aprobado' ? 'badge-warning' : 'badge-danger';
+
+                        return `
+                        <tr>
+                            <td><strong>${e.titulo}</strong></td>
+                            <td>${formatDate(e.fecha)}</td>
+                            <td>${e.ciudad}, ${e.pais}</td>
+                            <td><small>${agrupaciones}</small></td>
+                            <td><span class="badge ${estadoBadge}">${e.estado}</span></td>
+                        </tr>
+                    `;
+                    }).join('');
+                } catch (error) {
+                    showAlert('Error al cargar eventos: ' + error.message, 'error');
+                }
+            }
+
+            loadEventos();
+        });
+    </script>
+</body>
+
+</html>

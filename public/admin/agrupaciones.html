@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agrupaciones - Tambora Admin</title>
+    <link rel="stylesheet" href="/admin/css/admin.css">
+    <script src="/admin/js/auth.js" defer></script>
+    <script src="/admin/js/api.js" defer></script>
+</head>
+
+<body>
+    <div class="dashboard">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>🥁 Tambora</h2>
+                <p id="user-info">Cargando...</p>
+            </div>
+            <nav>
+                <ul class="nav-menu">
+                    <li class="nav-item">
+                        <a href="/admin/dashboard.html" class="nav-link">📊 Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/admin/agrupaciones.html" class="nav-link active">🎭 Agrupaciones</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/admin/integrantes.html" class="nav-link">👥 Integrantes</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/admin/eventos.html" class="nav-link">📅 Eventos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/" class="nav-link">🗺️ Mapa Público</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" id="logoutBtn">🚪 Cerrar Sesión</a>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <div class="content-header">
+                <h1>Agrupaciones</h1>
+                <button class="btn btn-primary" id="btnNueva">+ Nueva Agrupación</button>
+            </div>
+
+            <div class="card">
+                <div class="table-container">
+                    <table id="agrupacionesTable">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Tipo</th>
+                                <th>Ciudad</th>
+                                <th>País</th>
+                                <th>Concurso</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            <tr>
+                                <td colspan="6" style="text-align: center;">
+                                    <div class="spinner"></div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Nueva Agrupación</h2>
+            </div>
+            <form id="agrupacionForm">
+                <input type="hidden" id="agrupacionId">
+
+                <div class="form-group">
+                    <label for="nombre">Nombre *</label>
+                    <input type="text" id="nombre" class="form-control" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="tipo">Tipo *</label>
+                    <select id="tipo" class="form-control" required>
+                        <option value="">Seleccionar...</option>
+                        <option value="Comparsa Oficial">Comparsa Oficial</option>
+                        <option value="Agrupación/Grupo">Agrupación/Grupo</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="participaConcurso">
+                        <input type="checkbox" id="participaConcurso">
+                        Participa en concurso oficial
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label for="barrio">Barrio</label>
+                    <input type="text" id="barrio" class="form-control">
+                </div>
+
+                <div class="form-group">
+                    <label for="ciudad">Ciudad *</label>
+                    <input type="text" id="ciudad" class="form-control" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="pais">País *</label>
+                    <select id="pais" class="form-control" required>
+                        <option value="">Seleccionar...</option>
+                        <option value="Uruguay">Uruguay</option>
+                        <option value="Argentina">Argentina</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="añoFundacion">Año de Fundación</label>
+                    <input type="number" id="añoFundacion" class="form-control" min="1900" max="2025">
+                </div>
+
+                <div class="form-group">
+                    <label for="descripcion">Descripción</label>
+                    <textarea id="descripcion" class="form-control"></textarea>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="btnCancelar">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            Auth.checkAuth();
+            const user = Auth.getUser();
+            document.getElementById('user-info').textContent = user.username;
+            document.getElementById('logoutBtn').addEventListener('click', (e) => {
+                e.preventDefault();
+                Auth.logout();
+            });
+
+            const modal = document.getElementById('modal');
+            const form = document.getElementById('agrupacionForm');
+            let currentId = null;
+
+            // Load agrupaciones
+            async function loadAgrupaciones() {
+                try {
+                    const agrupaciones = await API.getAgrupaciones();
+                    const tbody = document.getElementById('tableBody');
+
+                    if (agrupaciones.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No hay agrupaciones registradas</td></tr>';
+                        return;
+                    }
+
+                    tbody.innerHTML = agrupaciones.map(a => `
+                    <tr>
+                        <td><strong>${a.nombre}</strong></td>
+                        <td><span class="badge badge-info">${a.tipo}</span></td>
+                        <td>${a.ciudad}</td>
+                        <td>${a.pais}</td>
+                        <td>${a.participaConcurso ? '<span class="badge badge-success">Sí</span>' : '<span class="badge badge-secondary">No</span>'}</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary" onclick="editAgrupacion('${a._id}')">Editar</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteAgrupacion('${a._id}', '${a.nombre}')">Eliminar</button>
+                        </td>
+                    </tr>
+                `).join('');
+                } catch (error) {
+                    showAlert('Error al cargar agrupaciones: ' + error.message, 'error');
+                }
+            }
+
+            // New agrupacion
+            document.getElementById('btnNueva').addEventListener('click', () => {
+                currentId = null;
+                form.reset();
+                document.getElementById('modalTitle').textContent = 'Nueva Agrupación';
+                modal.classList.add('active');
+            });
+
+            // Cancel
+            document.getElementById('btnCancelar').addEventListener('click', () => {
+                modal.classList.remove('active');
+            });
+
+            // Close modal on background click
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
+
+            // Save
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const data = {
+                    nombre: document.getElementById('nombre').value,
+                    tipo: document.getElementById('tipo').value,
+                    participaConcurso: document.getElementById('participaConcurso').checked,
+                    barrio: document.getElementById('barrio').value,
+                    ciudad: document.getElementById('ciudad').value,
+                    pais: document.getElementById('pais').value,
+                    añoFundacion: document.getElementById('añoFundacion').value || undefined,
+                    descripcion: document.getElementById('descripcion').value
+                };
+
+                try {
+                    if (currentId) {
+                        await API.updateAgrupacion(currentId, data);
+                        showAlert('Agrupación actualizada exitosamente');
+                    } else {
+                        await API.createAgrupacion(data);
+                        showAlert('Agrupación creada exitosamente');
+                    }
+                    modal.classList.remove('active');
+                    loadAgrupaciones();
+                } catch (error) {
+                    showAlert('Error: ' + error.message, 'error');
+                }
+            });
+
+            // Edit
+            window.editAgrupacion = async (id) => {
+                try {
+                    currentId = id;
+                    const agrupacion = await API.getAgrupacion(id);
+
+                    document.getElementById('nombre').value = agrupacion.nombre;
+                    document.getElementById('tipo').value = agrupacion.tipo;
+                    document.getElementById('participaConcurso').checked = agrupacion.participaConcurso;
+                    document.getElementById('barrio').value = agrupacion.barrio || '';
+                    document.getElementById('ciudad').value = agrupacion.ciudad;
+                    document.getElementById('pais').value = agrupacion.pais;
+                    document.getElementById('añoFundacion').value = agrupacion.añoFundacion || '';
+                    document.getElementById('descripcion').value = agrupacion.descripcion || '';
+
+                    document.getElementById('modalTitle').textContent = 'Editar Agrupación';
+                    modal.classList.add('active');
+                } catch (error) {
+                    showAlert('Error al cargar agrupación: ' + error.message, 'error');
+                }
+            };
+
+            // Delete
+            window.deleteAgrupacion = async (id, nombre) => {
+                if (!confirmDelete(`¿Eliminar la agrupación "${nombre}"?`)) return;
+
+                try {
+                    await API.deleteAgrupacion(id);
+                    showAlert('Agrupación eliminada exitosamente');
+                    loadAgrupaciones();
+                } catch (error) {
+                    showAlert('Error al eliminar: ' + error.message, 'error');
+                }
+            };
+
+            loadAgrupaciones();
+        });
+    </script>
+</body>
+
+</html>

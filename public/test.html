@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Datos Estáticos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        h1 {
+            color: #2a5298;
+        }
+
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f9f9f9;
+            border-left: 4px solid #2a5298;
+        }
+
+        .loading {
+            color: #666;
+            font-style: italic;
+        }
+
+        .success {
+            color: #10b981;
+            font-weight: bold;
+        }
+
+        .error {
+            color: #ef4444;
+            font-weight: bold;
+        }
+
+        pre {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🧪 Prueba de Datos Estáticos</h1>
+        <p>Esta página prueba si el problema es con la base de datos o con el frontend.</p>
+
+        <div class="section">
+            <h2>Test 1: Datos Estáticos (sin DB)</h2>
+            <p id="test1-status" class="loading">Cargando...</p>
+            <pre id="test1-data"></pre>
+        </div>
+
+        <div class="section">
+            <h2>Test 2: Datos desde MongoDB</h2>
+            <p id="test2-status" class="loading">Cargando...</p>
+            <pre id="test2-data"></pre>
+        </div>
+
+        <div class="section">
+            <h2>Diagnóstico</h2>
+            <div id="diagnosis"></div>
+        </div>
+
+        <div class="section">
+            <h2>Console Logs</h2>
+            <pre id="console-logs"></pre>
+        </div>
+    </div>
+
+    <script>
+        const logs = [];
+
+        // Capture console logs
+        const originalLog = console.log;
+        const originalError = console.error;
+
+        console.log = function (...args) {
+            logs.push('[LOG] ' + args.join(' '));
+            updateConsoleLogs();
+            originalLog.apply(console, args);
+        };
+
+        console.error = function (...args) {
+            logs.push('[ERROR] ' + args.join(' '));
+            updateConsoleLogs();
+            originalError.apply(console, args);
+        };
+
+        function updateConsoleLogs() {
+            document.getElementById('console-logs').textContent = logs.join('\n');
+        }
+
+        async function testStaticData() {
+            try {
+                console.log('Fetching static data from /api/test/agrupaciones...');
+                const response = await fetch('http://localhost:3000/api/test/agrupaciones');
+                console.log('Response status:', response.status);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Static data received:', data);
+
+                document.getElementById('test1-status').textContent = '✅ Éxito';
+                document.getElementById('test1-status').className = 'success';
+                document.getElementById('test1-data').textContent = JSON.stringify(data, null, 2);
+
+                return true;
+            } catch (error) {
+                console.error('Static data error:', error);
+                document.getElementById('test1-status').textContent = '❌ Error: ' + error.message;
+                document.getElementById('test1-status').className = 'error';
+                document.getElementById('test1-data').textContent = error.stack || error.message;
+                return false;
+            }
+        }
+
+        async function testDatabaseData() {
+            try {
+                console.log('Fetching database data from /api/agrupaciones...');
+                const response = await fetch('http://localhost:3000/api/agrupaciones');
+                console.log('Response status:', response.status);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Database data received:', data);
+
+                document.getElementById('test2-status').textContent = '✅ Éxito';
+                document.getElementById('test2-status').className = 'success';
+                document.getElementById('test2-data').textContent = JSON.stringify(data, null, 2);
+
+                return true;
+            } catch (error) {
+                console.error('Database data error:', error);
+                document.getElementById('test2-status').textContent = '❌ Error: ' + error.message;
+                document.getElementById('test2-status').className = 'error';
+                document.getElementById('test2-data').textContent = error.stack || error.message;
+                return false;
+            }
+        }
+
+        async function runTests() {
+            console.log('Starting tests...');
+
+            const staticOk = await testStaticData();
+            const dbOk = await testDatabaseData();
+
+            const diagnosis = document.getElementById('diagnosis');
+
+            if (staticOk && dbOk) {
+                diagnosis.innerHTML = '<p class="success">✅ Ambos tests pasaron. El problema NO es con el backend.</p><p>El problema está en el dashboard admin. Revisa la consola del navegador en las páginas del admin.</p>';
+            } else if (staticOk && !dbOk) {
+                diagnosis.innerHTML = '<p class="error">⚠️ Los datos estáticos funcionan pero los de MongoDB no.</p><p>El problema está en la conexión a la base de datos o en las rutas de la API.</p>';
+            } else if (!staticOk && !dbOk) {
+                diagnosis.innerHTML = '<p class="error">❌ Ambos tests fallaron.</p><p>Hay un problema con CORS, la red, o el servidor no está corriendo correctamente.</p>';
+            } else {
+                diagnosis.innerHTML = '<p class="error">🤔 Resultado inesperado. Revisa los logs.</p>';
+            }
+        }
+
+        // Run tests on page load
+        runTests();
+    </script>
+</body>
+
+</html>

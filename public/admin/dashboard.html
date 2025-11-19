@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tambora - Dashboard</title>
+    <link rel="stylesheet" href="/admin/css/admin.css">
+    <script src="/admin/js/auth.js" defer></script>
+    <script src="/admin/js/api.js" defer></script>
+</head>
+
+<body>
+    <div class="dashboard">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>🥁 Tambora</h2>
+                <p id="user-info">Cargando...</p>
+            </div>
+            <nav>
+                <ul class="nav-menu">
+                    <li class="nav-item">
+                        <a href="/admin/dashboard.html" class="nav-link active">📊 Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/admin/agrupaciones.html" class="nav-link">🎭 Agrupaciones</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/admin/integrantes.html" class="nav-link">👥 Integrantes</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/admin/eventos.html" class="nav-link">📅 Eventos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/" class="nav-link">🗺️ Mapa Público</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" id="logoutBtn">🚪 Cerrar Sesión</a>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <div class="content-header">
+                <h1>Dashboard</h1>
+            </div>
+
+            <div id="stats-container" class="flex gap-10" style="flex-wrap: wrap;">
+                <div class="card" style="flex: 1; min-width: 200px;">
+                    <h3 style="color: var(--primary); margin-bottom: 10px;">Agrupaciones</h3>
+                    <p style="font-size: 2rem; font-weight: bold;" id="total-agrupaciones">-</p>
+                </div>
+                <div class="card" style="flex: 1; min-width: 200px;">
+                    <h3 style="color: var(--success); margin-bottom: 10px;">Integrantes</h3>
+                    <p style="font-size: 2rem; font-weight: bold;" id="total-integrantes">-</p>
+                </div>
+                <div class="card" style="flex: 1; min-width: 200px;">
+                    <h3 style="color: var(--secondary); margin-bottom: 10px;">Eventos</h3>
+                    <p style="font-size: 2rem; font-weight: bold;" id="total-eventos">-</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>Bienvenido al Panel de Administración</h3>
+                </div>
+                <p>Desde aquí puedes gestionar todas las agrupaciones, integrantes y eventos de Tambora.</p>
+                <p style="margin-top: 10px;">Utiliza el menú lateral para navegar entre las diferentes secciones.</p>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>Próximos Eventos</h3>
+                </div>
+                <div id="upcoming-events">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Check authentication
+            Auth.checkAuth();
+
+            // Display user info
+            const user = Auth.getUser();
+            document.getElementById('user-info').textContent = user.username;
+
+            // Logout
+            document.getElementById('logoutBtn').addEventListener('click', (e) => {
+                e.preventDefault();
+                Auth.logout();
+            });
+
+            // Load statistics
+            async function loadStats() {
+                try {
+                    const [agrupaciones, integrantes, eventos] = await Promise.all([
+                        API.getAgrupaciones(),
+                        API.getIntegrantes(),
+                        API.getEventos()
+                    ]);
+
+                    document.getElementById('total-agrupaciones').textContent = agrupaciones.length;
+                    document.getElementById('total-integrantes').textContent = integrantes.length;
+                    document.getElementById('total-eventos').textContent = eventos.length;
+
+                    // Show upcoming events
+                    const upcomingEvents = eventos
+                        .filter(e => new Date(e.fecha) >= new Date())
+                        .sort((a, b) => new Date(a.fecha) - new Date(b.fecha))
+                        .slice(0, 5);
+
+                    const eventsContainer = document.getElementById('upcoming-events');
+                    if (upcomingEvents.length === 0) {
+                        eventsContainer.innerHTML = '<p>No hay eventos próximos</p>';
+                    } else {
+                        eventsContainer.innerHTML = upcomingEvents.map(e => `
+                            <div style="padding: 10px; border-bottom: 1px solid var(--border);">
+                                <strong>${e.titulo}</strong><br>
+                                <small>${formatDate(e.fecha)} - ${e.ciudad}, ${e.pais}</small>
+                            </div>
+                        `).join('');
+                    }
+                } catch (error) {
+                    console.error('Error loading stats:', error);
+                }
+            }
+
+            loadStats();
+        });
+    </script>
+</body>
+
+</html>

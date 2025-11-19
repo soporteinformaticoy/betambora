@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Simple - Agrupaciones</title>
+    <script src="/admin/js/auth.js" defer></script>
+    <script src="/admin/js/api.js" defer></script>
+</head>
+
+<body>
+    <h1>Test Simple de Agrupaciones</h1>
+    <div id="status">Iniciando...</div>
+    <div id="data"></div>
+
+    <script>
+        console.log('Script inline ejecutándose');
+
+        document.addEventListener('DOMContentLoaded', function () {
+            console.log('DOMContentLoaded disparado');
+            console.log('typeof Auth:', typeof Auth);
+            console.log('typeof API:', typeof API);
+
+            document.getElementById('status').textContent = 'DOMContentLoaded ejecutado. Auth: ' + typeof Auth + ', API: ' + typeof API;
+
+            if (typeof API !== 'undefined') {
+                console.log('Llamando a API.getAgrupaciones()...');
+                API.getAgrupaciones()
+                    .then(data => {
+                        console.log('Datos recibidos:', data);
+                        document.getElementById('status').textContent = 'Datos cargados: ' + data.length + ' agrupaciones';
+                        document.getElementById('data').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        document.getElementById('status').textContent = 'Error: ' + error.message;
+                        document.getElementById('data').textContent = error.stack;
+                    });
+            } else {
+                document.getElementById('status').textContent = 'ERROR: API no está definido';
+            }
+        });
+
+        console.log('Script inline terminado');
+    </script>
+</body>
+
+</html>
