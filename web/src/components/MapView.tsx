@@ -77,16 +77,24 @@ export default function MapView() {
 
     map.addControl(new mapboxgl.NavigationControl(), "top-right");
 
-    // Marcador de posición del usuario
-    new mapboxgl.Marker({ color: "#fff" })
-      .setLngLat(userPos)
-      .setPopup(new mapboxgl.Popup().setText("¡Estás acá!"))
-      .addTo(map);
+    // Esperar a que el mapa esté completamente cargado
+    map.on("load", () => {
+      // Marcador de posición del usuario
+      new mapboxgl.Marker({ color: "#fff" })
+        .setLngLat(userPos)
+        .setPopup(new mapboxgl.Popup().setText("¡Estás acá!"))
+        .addTo(map);
+    });
 
     mapRef.current = map;
 
-    return () => map.remove();
-  }, [MAPBOX_TOKEN]);
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+    };
+  }, [MAPBOX_TOKEN, userPos]);
 
   // Mover mapa cuando cambia userPos
   useEffect(() => {
@@ -119,16 +127,16 @@ export default function MapView() {
       .catch((err) => console.error("Error cargando eventos:", err));
   }, []);
 
-  // Renderizar marcadores
-  useEffect(() => {
-    if (!mapRef.current || eventos.length === 0) return;
+  // Función para agregar marcadores
+  const agregarMarcadores = () => {
+    if (!mapRef.current) return;
 
     // Limpiar marcadores anteriores
     markersRef.current.forEach((marker) => marker.remove());
     markersRef.current = [];
 
     eventos.forEach((ev) => {
-      if (!ev.ubicacion?.coordinates) return;
+      if (!ev.ubicacion?.coordinates || !mapRef.current) return;
 
       const [lng, lat] = ev.ubicacion.coordinates;
 
@@ -144,6 +152,24 @@ export default function MapView() {
 
       markersRef.current.push(marker);
     });
+  };
+
+  // Renderizar marcadores
+  useEffect(() => {
+    if (!mapRef.current || eventos.length === 0) return;
+
+    // Verificar que el mapa esté cargado usando el evento 'load'
+    const map = mapRef.current;
+    
+    if (map.isStyleLoaded()) {
+      // El mapa ya está cargado, agregar marcadores directamente
+      agregarMarcadores();
+    } else {
+      // Esperar a que el mapa esté listo
+      map.once("load", () => {
+        agregarMarcadores();
+      });
+    }
   }, [eventos]);
 
   // Handler toggle "Voy"
