@@ -2,10 +2,21 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
+const session = require('express-session');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Passport configuration
+const passport = require('./config/passport');
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'tambora_secret_session',
+  resave: false,
+  saveUninitialized: false
+}));
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Conexión a MongoDB
 mongoose.connect(process.env.MONGODB_URI)
