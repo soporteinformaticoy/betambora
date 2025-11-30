@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const passport = require('passport');
+const passport = require('../config/passport');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'tambora_secret_key_change_in_production';
 
