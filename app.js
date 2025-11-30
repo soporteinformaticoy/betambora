@@ -19,6 +19,7 @@ app.use(express.static('public'));
 
 // Import routes
 const authRoutes = require('./routes/auth');
+app.use('/auth', authRoutes); // <-- Google OAuth flow
 const agrupacionesRoutes = require('./routes/agrupaciones');
 const integrantesRoutes = require('./routes/integrantes');
 const eventosRoutes = require('./routes/eventos');

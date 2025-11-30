@@ -18,6 +18,15 @@ export default function Landing() {
     }
   }, [router]);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    if (token) {
+      localStorage.setItem('tamboraToken', token);
+      window.location.href = '/mapa';
+    }
+  }, []);
+
   const GOOGLE_URL =
     `${process.env.NEXT_PUBLIC_BACKEND_URL || ""}/auth/google` ||
     "http://localhost:3000/auth/google";

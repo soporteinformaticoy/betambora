@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const passport = require('passport');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'tambora_secret_key_change_in_production';
 
@@ -76,5 +77,15 @@ router.post('/login', async (req, res) => {
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 });
+
+// Google OAuth login flow - SAGRADAMENTE SIMPLE
+router.get('/google', passport.authenticate('google', { scope: [ 'profile', 'email' ] }));
+router.get('/google/callback',
+  passport.authenticate('google', { failureRedirect: '/' }),
+  (req, res) => {
+    const token = jwt.sign({ id: req.user._id }, JWT_SECRET, { expiresIn: '7d' });
+    res.redirect(`http://localhost:3001/?token=${token}`);
+  }
+);
 
 module.exports = router;
