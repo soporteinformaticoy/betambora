@@ -10,10 +10,26 @@ const PORT = process.env.PORT || 3000;
 
 // Passport configuration
 const passport = require('./config/passport');
+
+// CORS configurado ANTES de session para OAuth
+app.use(cors({
+  origin: ['http://localhost:3000', 'http://localhost:3001'],
+  credentials: true
+}));
+
+app.use(express.json());
+app.use(express.static('public'));
+
+// Session configurado DESPUÉS de CORS
 app.use(session({
   secret: process.env.SESSION_SECRET || 'tambora_secret_session',
   resave: false,
-  saveUninitialized: false
+  saveUninitialized: false,
+  cookie: {
+    secure: false, // true en producción con HTTPS
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000 // 24 horas
+  }
 }));
 app.use(passport.initialize());
 app.use(passport.session());
@@ -22,11 +38,6 @@ app.use(passport.session());
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('Conectado a MongoDB'))
   .catch(err => console.error('Error de conexión a MongoDB:', err));
-
-// Middleware
-app.use(cors());
-app.use(express.json());
-app.use(express.static('public'));
 
 // Import routes
 const authRoutes = require('./routes/auth');
