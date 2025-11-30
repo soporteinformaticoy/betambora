@@ -1,0 +1,72 @@
+# Resumen Técnico del Proyecto Tambora
+
+## 1. Funcionalidades Testeadas y Operativas
+Actualmente, el sistema cuenta con las siguientes funcionalidades verificadas:
+
+### Interfaz Pública (Frontend)
+- **Visualización de Eventos**: Mapa interactivo (Leaflet) con marcadores de eventos.
+- **Búsqueda Avanzada**:
+  - **Geoespacial**: Búsqueda de eventos por ubicación y radio (4km) utilizando Nominatim para geocodificación.
+  - **Temporal**: Filtrado de eventos por rangos de fecha (Hoy, Esta Semana, Este Mes).
+  - **Filtros**: Por país (Uruguay/Argentina) y tipo de evento.
+- **Navegación por Pestañas**: Separación clara entre búsqueda de "Agrupaciones" y "Eventos".
+- **Detalle de Agrupaciones**: Panel lateral con información detallada, redes sociales e integrantes.
+- **Privacidad**: Visualización condicional de integrantes basada en el flag `perfilPublico`.
+- **Responsividad**: Diseño adaptable con barra lateral colapsable para dispositivos móviles.
+
+### Panel de Administración (Backend/Frontend)
+- **Autenticación**: Sistema de Login seguro para administradores.
+- **Gestión de Agrupaciones**: CRUD completo (Crear, Leer, Actualizar, Eliminar).
+- **Gestión de Integrantes**: CRUD con asignación a agrupaciones.
+- **Gestión de Eventos**: CRUD con soporte para ubicación geoespacial.
+
+### API RESTful
+- **Endpoints Públicos**: Recuperación de eventos y agrupaciones con filtros optimizados.
+- **Endpoints Privados**: Protegidos vía JWT para operaciones de escritura.
+- **Validación**: Middleware de validación de datos y manejo de errores centralizado.
+
+## 2. Arquitectura del Sistema
+El proyecto sigue una arquitectura monolítica modular basada en el stack **MERN** (MongoDB, Express, React -simulado con Vanilla JS/HTML por ahora-, Node.js), diseñada para ser mantenible y escalable.
+
+### Componentes Principales
+- **Backend (Node.js + Express)**:
+  - **MVC (Modelo-Vista-Controlador)**: Separación lógica entre definición de datos (Mongoose Models), lógica de negocio (Controllers/Routes) y presentación (Public/Admin views).
+  - **Middleware**: Uso de middlewares para autenticación (`auth.js`), autorización (`requireAdmin.js`) y manejo de errores.
+- **Base de Datos (MongoDB)**:
+  - Esquemas estrictos con Mongoose.
+  - **Índices Geoespaciales**: Uso de índices `2dsphere` en la colección `events` para consultas de proximidad ultra-rápidas.
+- **Frontend**:
+  - HTML5/CSS3/JavaScript (Vanilla) para una carga ligera y control total del DOM.
+  - Integración con librerías ligeras (Leaflet.js) para mapas.
+
+## 3. Escalabilidad y Preparación para el Futuro
+La arquitectura actual ha sido pensada para facilitar el crecimiento del producto:
+
+- **Desacoplamiento**: La API RESTful permite que el frontend sea reemplazado o complementado por una App Móvil (React Native/Flutter) o una SPA (React/Vue) sin cambios en el backend.
+- **Base de Datos**: MongoDB permite escalar horizontalmente (Sharding) si el volumen de datos crece masivamente. Los índices actuales aseguran que las consultas geoespaciales se mantengan rápidas.
+- **Stateless**: El backend es "stateless" (sin estado), utilizando JWT para la sesión. Esto permite desplegar múltiples instancias del servidor detrás de un balanceador de carga sin problemas de sesión.
+- **Modularidad**: El código está organizado en rutas y controladores separados, facilitando la transición a una arquitectura de Microservicios si fuera necesario en el futuro (ej: separar el servicio de "Búsqueda" del de "Gestión de Usuarios").
+
+## 4. Notas para Profesionales
+- **Seguridad**: Las contraseñas se hashean con `bcrypt`. Las rutas sensibles están protegidas. Se recomienda configurar HTTPS y variables de entorno seguras en producción.
+- **Testing**: Se han incluido scripts de verificación (`verifyData.js`, `verifySearch.js`, `verifyVisibility.js`) para asegurar la integridad de los datos y la lógica de negocio crítica.
+- **Calidad de Código**: Se siguen convenciones de estilo estándar, uso de `async/await` para manejo de promesas y estructura de carpetas intuitiva.
+
+## 5. Estado de Branches (Git)
+El proyecto utiliza Git Flow para organizar el desarrollo:
+
+- **main**: Rama de producción estable. Último commit: 'feat: initial commit - Tambora v1.0.0' (8142732)
+- **develop**: Rama de desarrollo activo. Último commit: 'fix: remove google maps link from event modal' (64e848b)
+- **feature/public-ui**: Rama de feature para la UI pública (ya mergeada a develop). Último commit: 64e848b
+
+### Workflow Actual
+1. Nuevas features se desarrollan en ramas 'feature/*' desde 'develop'
+2. Una vez completadas y testeadas, se mergean a 'develop'
+3. Cuando 'develop' está listo para producción, se mergea a 'main'
+4. Los hotfixes urgentes pueden ir directamente a 'main' y luego backport a 'develop'
+
+### Cambios Pendientes de Commit
+Actualmente en 'develop' hay cambios relacionados con:
+- Implementación de OAuth (Google/Facebook)
+- Frontend de autenticación (modal de login, manejo de tokens)
+- Endpoint /api/auth/me para validación de sesión
