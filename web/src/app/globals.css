@@ -35,3 +35,20 @@ body, html {
   background: #000 !important;
   color: #fff;
 }
+
+.tambora-drum-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 2px 10px #dc2626aa);
+  transition: transform 0.2s;
+}
+
+.tambora-drum-marker:hover {
+  transform: scale(1.15);
+}
+
+.tambora-popup {
+  box-shadow: 0 6px 70px #b91c1c88;
+  border-radius: 1.5rem;
+}
