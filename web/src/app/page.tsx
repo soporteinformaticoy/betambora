@@ -1,65 +1,64 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+
+export default function Landing() {
+  const router = useRouter();
+
+  useEffect(() => {
+    // Busca token en cookies o localStorage (solo lado cliente)
+    if (
+      typeof window !== "undefined" &&
+      (localStorage.getItem("token") || document.cookie.includes("token="))
+    ) {
+      router.replace("/mapa");
+    }
+  }, [router]);
+
+  const GOOGLE_URL =
+    `${process.env.NEXT_PUBLIC_BACKEND_URL || ""}/auth/google` ||
+    "http://localhost:3000/auth/google";
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
+    <div className="relative min-h-screen flex flex-col items-center justify-center bg-black overflow-hidden">
+      {/* Fuego animado abajo */}
+      <div className="absolute bottom-0 left-0 w-full h-[32vh] z-0 fire-gradient animate-fire pointer-events-none" />
+
+      {/* Luna roja animada */}
+      <motion.div
+        className="absolute inset-0 flex items-center justify-center z-10"
+        animate={{ scale: [0.96, 1.14, 1.06], boxShadow: ["0 0 90px #b91c1c99", "0 0 120px #dc2626cc", "0 0 100px #b91c1c99"] }}
+        transition={{
+          duration: 2,
+          repeat: Infinity,
+          repeatType: "reverse",
+          ease: "easeInOut",
+        }}
+      >
+        <div className="rounded-full bg-gradient-to-b from-red-900 via-red-700 to-black w-[340px] h-[340px] shadow-2xl border-8 border-red-900 opacity-95"></div>
+      </motion.div>
+
+      {/* Textos y botón sobre la luna */}
+      <div className="relative z-20 flex flex-col items-center gap-8">
+        <h1 className="text-6xl sm:text-7xl font-black text-red-700 drop-shadow-lg tracking-widest animate-fadein">
+          Tambora
+        </h1>
+        <h2 className="text-lg sm:text-2xl font-semibold text-white/90 mb-2 max-w-xl text-center animate-fadein-slow">
+          Almas de ayer y hoy haciendo chas chas bajo las estrellas
+        </h2>
+        <Button
+          asChild
+          size="lg"
+          className="mt-4 px-10 py-6 bg-red-700 hover:bg-red-900 text-xl font-bold rounded-full shadow-lg animate-pulse-glow"
+        >
+          <a href={GOOGLE_URL}>
+            Entrar con Google &middot; <span className="font-light">Reconocer mi alma</span>
           </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+        </Button>
+      </div>
     </div>
   );
 }
