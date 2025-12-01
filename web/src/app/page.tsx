@@ -27,7 +27,7 @@ export default function Landing() {
   }, [router]);
 
   const GOOGLE_URL =
-    `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3000"}/api/auth/google`;
+    `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3000"}/auth/google`;
 
   return (
     <div className="relative min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-black via-gray-900 to-black overflow-hidden">
