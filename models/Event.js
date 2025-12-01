@@ -52,6 +52,14 @@ const eventSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
     },
+    goingCount: {
+        type: Number,
+        default: 0
+    },
+    goingUsers: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    }],
     createdAt: {
         type: Date,
         default: Date.now

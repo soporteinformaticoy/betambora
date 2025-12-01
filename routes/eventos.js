@@ -91,4 +91,37 @@ router.delete('/:id', auth, async (req, res) => {
     }
 });
 
+// Toggle "Voy" a evento (requiere autenticación)
+router.post('/:id/going', auth, async (req, res) => {
+    try {
+        const event = await Event.findById(req.params.id);
+        if (!event) {
+            return res.status(404).json({ message: 'Event not found' });
+        }
+
+        const userId = req.user._id;
+        const userIndex = event.goingUsers.indexOf(userId);
+
+        if (userIndex > -1) {
+            // Usuario ya está en la lista, removerlo
+            event.goingUsers.splice(userIndex, 1);
+            event.goingCount = Math.max(0, event.goingCount - 1);
+        } else {
+            // Agregar usuario a la lista
+            event.goingUsers.push(userId);
+            event.goingCount = (event.goingCount || 0) + 1;
+        }
+
+        await event.save();
+        await event.populate('agrupaciones', 'nombre tipo ciudad');
+
+        res.json({
+            goingCount: event.goingCount,
+            iAmGoing: event.goingUsers.includes(userId)
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
 module.exports = router;
