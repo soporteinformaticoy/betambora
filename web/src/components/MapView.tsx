@@ -209,38 +209,54 @@ export default function MapView() {
   return (
     <div className="relative w-full h-screen bg-black">
       {/* Sidebar */}
-      <aside className="fixed left-0 top-0 z-30 flex flex-col items-center bg-black/90 border-r border-red-800 min-h-screen w-[4.5rem] hover:w-64 group transition-all duration-200 overflow-hidden">
-        <div className="flex flex-col items-center gap-4 py-6 w-full">
-          <img
-            className="rounded-full border-4 border-red-950 shadow-xl"
-            src={usuario.foto}
-            width={56}
-            height={56}
-            alt="avatar"
-          />
-          <span className="hidden group-hover:block font-bold text-red-300 text-lg mt-2 w-full text-center">
-            {usuario.nombre}
-          </span>
-          {usuario.cuerda && (
-            <span className="hidden group-hover:block text-xs text-red-100 italic mb-2 w-full text-center">
-              {usuario.cuerda}
-            </span>
-          )}
+      <aside className="fixed left-0 top-0 z-30 flex flex-col bg-black/95 border-r-2 border-red-800 min-h-screen w-64 shadow-2xl">
+        <div className="flex flex-col gap-6 py-8 px-6">
+          {/* Header con logo/título */}
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-full bg-red-700 flex items-center justify-center text-white font-black text-xl">
+              🥁
+            </div>
+            <h2 className="text-xl font-black text-red-600">Tambora</h2>
+          </div>
+
+          {/* Usuario */}
+          <div className="flex flex-col items-center gap-3 pb-6 border-b border-red-900/50">
+            <img
+              className="rounded-full border-4 border-red-950 shadow-xl w-20 h-20 object-cover"
+              src={usuario.foto}
+              alt="avatar"
+            />
+            <div className="text-center">
+              <p className="font-bold text-red-300 text-lg">{usuario.nombre}</p>
+              {usuario.cuerda && (
+                <p className="text-sm text-red-100 italic mt-1">{usuario.cuerda}</p>
+              )}
+            </div>
+          </div>
+
+          {/* Botón Panel Admin */}
           {usuario.esAdmin && (
             <a
-              className="hidden group-hover:block mt-2 w-5/6 bg-yellow-400/10 hover:bg-yellow-300/20 text-yellow-300 rounded-lg py-2 px-4 text-sm text-center font-semibold border border-yellow-400 transition"
+              className="w-full bg-yellow-400/10 hover:bg-yellow-300/20 text-yellow-300 rounded-lg py-3 px-4 text-sm text-center font-semibold border-2 border-yellow-400 transition-all hover:scale-105"
               href="/admin"
               target="_blank"
             >
               ⚡ Panel Admin
             </a>
           )}
+
+          {/* Stats o info adicional */}
+          <div className="mt-auto pt-6 border-t border-red-900/50">
+            <p className="text-xs text-red-200/60 text-center">
+              {eventos.length} eventos activos
+            </p>
+          </div>
         </div>
       </aside>
 
       {/* Searchbar */}
       {MAPBOX_TOKEN && typeof window !== "undefined" && (
-        <div className="absolute top-4 left-1/2 z-20 w-[94vw] max-w-lg -translate-x-1/2">
+        <div className="absolute top-4 left-[17rem] right-4 z-20 max-w-lg">
           <SearchBox
             accessToken={MAPBOX_TOKEN}
             placeholder="Buscar dirección, lugar..."
@@ -250,7 +266,7 @@ export default function MapView() {
       )}
 
       {/* Mapa */}
-      <div ref={mapContainer} className="w-full h-screen" />
+      <div ref={mapContainer} className="w-full h-screen ml-64" />
 
       {/* Popup */}
       {popup && (
