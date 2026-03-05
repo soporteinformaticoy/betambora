@@ -83,7 +83,7 @@ router.get('/google', passport.authenticate('google', { scope: [ 'profile', 'ema
 router.get('/google/callback',
   passport.authenticate('google', { failureRedirect: '/' }),
   (req, res) => {
-    const token = jwt.sign({ id: req.user._id }, JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign({ userId: req.user._id }, JWT_SECRET, { expiresIn: '7d' });
     res.redirect(`http://localhost:3001/?token=${token}`);
   }
 );

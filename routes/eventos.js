@@ -100,11 +100,11 @@ router.post('/:id/going', auth, async (req, res) => {
         }
 
         const userId = req.user._id;
-        const userIndex = event.goingUsers.indexOf(userId);
+        const yaEsta = event.goingUsers.some(id => id.equals(userId));
 
-        if (userIndex > -1) {
+        if (yaEsta) {
             // Usuario ya está en la lista, removerlo
-            event.goingUsers.splice(userIndex, 1);
+            event.goingUsers = event.goingUsers.filter(id => !id.equals(userId));
             event.goingCount = Math.max(0, event.goingCount - 1);
         } else {
             // Agregar usuario a la lista
@@ -117,7 +117,7 @@ router.post('/:id/going', auth, async (req, res) => {
 
         res.json({
             goingCount: event.goingCount,
-            iAmGoing: event.goingUsers.includes(userId)
+            iAmGoing: event.goingUsers.some(id => id.equals(userId))
         });
     } catch (error) {
         res.status(500).json({ message: 'Server error', error: error.message });

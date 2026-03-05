@@ -80,10 +80,10 @@ app.post('/api/events/:id/going', auth, async (req, res) => {
     }
 
     const userId = req.user._id;
-    const userIndex = event.goingUsers.indexOf(userId);
+    const yaEsta = event.goingUsers.some(id => id.equals(userId));
 
-    if (userIndex > -1) {
-      event.goingUsers.splice(userIndex, 1);
+    if (yaEsta) {
+      event.goingUsers = event.goingUsers.filter(id => !id.equals(userId));
       event.goingCount = Math.max(0, event.goingCount - 1);
     } else {
       event.goingUsers.push(userId);
@@ -93,7 +93,7 @@ app.post('/api/events/:id/going', auth, async (req, res) => {
     await event.save();
     res.json({
       goingCount: event.goingCount,
-      iAmGoing: event.goingUsers.includes(userId)
+      iAmGoing: event.goingUsers.some(id => id.equals(userId))
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
